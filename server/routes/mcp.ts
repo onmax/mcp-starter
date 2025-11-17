@@ -1,33 +1,5 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { z } from "zod";
-
-const GetDocSchema = z.object({
-    section: z.string().optional(),
-    search_query: z.string().optional(),
-});
-
-const GetCodeSchema = z.object({
-    filepath: z.string().optional(),
-    category: z
-        .enum(["routes", "api-handlers", "config", "tests", "utils"])
-        .optional(),
-    search_pattern: z.string().optional(),
-});
-
-const GenerateSchema = z.object({
-    type: z.enum(["tool", "resource", "prompt"]),
-    description: z.string(),
-    format: z.enum(["typescript", "python"]).optional().default("typescript"),
-});
-
-const CustomizePromptSchema = {
-    use_case: z.string(),
-};
-
-const UnderstandPatternSchema = {
-    pattern: z.enum(["list-search", "caching", "validation", "error-handling"]),
-};
 
 function createServer() {
     const server = new McpServer(
@@ -44,22 +16,29 @@ function createServer() {
         },
     );
 
-    // Register Resources
+    // Resources expose data indexes for LLM browsing
     server.registerResource(
-        "documentation",
-        "resource://mcp-starter/documentation",
+        "patterns",
+        "resource://nuxt-mcp-starter/patterns",
         {
-            title: "Documentation Index",
-            description: "Index of all documentation sections",
+            title: "MCP Patterns Index",
+            description: "Index of available Nuxt MCP implementation patterns",
         },
         async () => {
-            const docs = await $fetch("/api/mcp/get-documentation");
+            const patterns = [
+                { id: 'list-search', name: 'List-Search Consolidation', description: 'Combine list/get/search in one tool' },
+                { id: 'caching', name: 'Response Caching', description: 'Cache expensive operations' },
+                { id: 'validation', name: 'Input Validation', description: 'Zod schema validation' },
+                { id: 'error-handling', name: 'Actionable Errors', description: 'LLM-friendly error messages' },
+                { id: 'pagination', name: 'Result Pagination', description: 'Handle large datasets' },
+                { id: 'auth', name: 'Authentication', description: 'API key and auth handling' },
+            ]
             return {
                 contents: [
                     {
-                        uri: "resource://mcp-starter/documentation",
+                        uri: "resource://nuxt-mcp-starter/patterns",
                         mimeType: "application/json",
-                        text: JSON.stringify(docs, null, 2),
+                        text: JSON.stringify(patterns, null, 2),
                     },
                 ],
             };
@@ -67,51 +46,83 @@ function createServer() {
     );
 
     server.registerResource(
-        "codebase",
-        "resource://mcp-starter/codebase",
+        "examples",
+        "resource://nuxt-mcp-starter/examples",
         {
-            title: "Codebase Index",
-            description: "Index of key code files",
+            title: "Example Projects",
+            description: "Real-world Nuxt MCP project examples",
         },
         async () => {
-            const code = await $fetch("/api/mcp/get-code");
+            const examples = [
+                { name: 'Recipe API MCP', dataSource: 'api', useCase: 'Search recipes from external API', auth: false },
+                { name: 'Database Query MCP', dataSource: 'database', useCase: 'Query local database', auth: true },
+                { name: 'File Content MCP', dataSource: 'file', useCase: 'Search markdown documentation', auth: false },
+            ]
             return {
                 contents: [
                     {
-                        uri: "resource://mcp-starter/codebase",
+                        uri: "resource://nuxt-mcp-starter/examples",
                         mimeType: "application/json",
-                        text: JSON.stringify(code, null, 2),
+                        text: JSON.stringify(examples, null, 2),
                     },
                 ],
             };
         },
     );
 
-    // Register Tools
+    // Tools enable parameterized queries
     server.registerTool(
-        "get_documentation",
+        "get_pattern",
         {
-            title: "Get Documentation",
-            description: `Query template documentation. Three modes:
-- No params: List all sections
-- With section: Get specific section markdown
-- With search_query: Search across docs
-
-Examples:
-- List: {}
-- Get: { "section": "architecture" }
-- Search: { "search_query": "caching patterns" }`,
-            inputSchema: GetDocSchema,
+            title: "Get MCP Pattern",
+            description: `Get working TypeScript code + explanation for a specific Nuxt MCP implementation pattern. Returns complete code examples you can copy-paste. Available patterns: "validation" (Zod input validation), "caching" (response caching), "auth" (API key authentication), "error-handling" (actionable error messages), "pagination" (large datasets), "list-search" (consolidate list/get/search operations).`,
+            inputSchema: GetPatternSchema,
+            annotations: {
+                readOnlyHint: true,
+                destructiveHint: false,
+                idempotentHint: true,
+                openWorldHint: false,
+            },
         },
         async (args: any) => {
-            const data = await $fetch("/api/mcp/get-documentation", {
+            const data = await $fetch("/api/mcp/get-pattern", {
+                query: args,
+            }) as any;
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: args.format === 'code' 
+                            ? data.code 
+                            : `# ${data.pattern}\n\n${data.explanation}\n\n## Implementation\n\n\`\`\`typescript\n${data.code}\n\`\`\``,
+                    },
+                ],
+            };
+        },
+    );
+
+    server.registerTool(
+        "create_nuxt_project",
+        {
+            title: "Create Nuxt MCP Project",
+            description: `Generate a complete, ready-to-use Nuxt MCP project with all necessary files: Zod schemas, API handlers with caching, MCP tool registration, and evaluation tests. Specify data source type ("api" for REST APIs, "database" for SQL/NoSQL, "file" for files), a short use case description (e.g., "recipe API", "GitHub API"), and whether authentication is needed. Returns full project code including npm create command.`,
+            inputSchema: CreateProjectSchema,
+            annotations: {
+                readOnlyHint: true,
+                destructiveHint: false,
+                idempotentHint: true,
+                openWorldHint: false,
+            },
+        },
+        async (args: any) => {
+            const data = await $fetch("/api/mcp/create-nuxt-project", {
                 query: args,
             });
             return {
                 content: [
                     {
                         type: "text",
-                        text: JSON.stringify(data, null, 2),
+                        text: `# Generated Nuxt MCP Project: ${data.use_case}\n\n**Configuration:**\n- Data Source: ${data.data_source}\n- Auth Required: ${data.auth_required}\n\n**Next Steps:**\n${data.next_steps.map((s: string, i: number) => `${i + 1}. ${s}`).join('\n')}\n\n---\n\n${data.code}`,
                     },
                 ],
             };
@@ -119,125 +130,95 @@ Examples:
     );
 
     server.registerTool(
-        "get_code",
+        "debug_setup",
         {
-            title: "Get Code",
-            description: `Explore template codebase. Four modes:
-- No params: List all files by category
-- With category: Filter files (routes|api-handlers|config|tests|utils)
-- With filepath: Get source code + explanation
-- With search_pattern: Search code
-
-Examples:
-- List: {}
-- Filter: { "category": "api-handlers" }
-- Get: { "filepath": "server/routes/mcp.ts" }
-- Search: { "search_pattern": "validation" }`,
-            inputSchema: GetCodeSchema,
+            title: "Debug MCP Setup",
+            description: `Get troubleshooting help for common MCP server setup problems. Returns diagnosis and specific solutions with code examples. Issue types: "tools-not-showing" (tools don't appear in Claude Desktop), "cors-error" (CORS/connection errors), "schema-validation" (Zod schema validation failures), "transport-setup" (MCP transport connection issues), "general" (other setup problems). Optionally include error message for better diagnosis.`,
+            inputSchema: DebugSetupSchema,
+            annotations: {
+                readOnlyHint: true,
+                destructiveHint: false,
+                idempotentHint: true,
+                openWorldHint: false,
+            },
         },
         async (args: any) => {
-            const data = await $fetch("/api/mcp/get-code", { query: args });
-            return {
-                content: [
-                    {
-                        type: "text",
-                        text: JSON.stringify(data, null, 2),
-                    },
-                ],
-            };
-        },
-    );
-
-    server.registerTool(
-        "generate_mcp_boilerplate",
-        {
-            title: "Generate MCP Boilerplate",
-            description: `Generate tool/resource/prompt boilerplate code.
-
-Parameters:
-- type: "tool" | "resource" | "prompt"
-- description: Natural language description of what it should do
-- format: "typescript" | "python" (default: typescript)
-
-Returns complete code with:
-- Validation schema (Zod/Pydantic)
-- Handler function
-- Registration code
-- Usage comments
-
-Example:
-{
-  "type": "tool",
-  "description": "Search documentation by topic",
-  "format": "typescript"
-}`,
-            inputSchema: GenerateSchema,
-        },
-        async (args: any) => {
-            const data = await $fetch("/api/mcp/generate-mcp-boilerplate", {
+            const data = await $fetch("/api/mcp/debug-setup", {
                 query: args,
             });
             return {
                 content: [
                     {
                         type: "text",
-                        text: data.code,
+                        text: `# ${data.diagnosis}\n\n**Error:** ${data.error_message}\n\n## Solutions\n\n${data.solutions.join('\n\n')}\n\n## Additional Resources\n\n${data.additional_resources.map((r: string) => `- ${r}`).join('\n')}`,
                     },
                 ],
             };
         },
     );
 
-    // Register Prompts
+    // Prompts provide guided workflows for common tasks
     server.registerPrompt(
-        "customize_template",
+        "scaffold_for_api",
         {
-            title: "Customize Template",
+            title: "Scaffold MCP for API",
             description:
-                "Step-by-step guide for customizing this template for your use case",
-            argsSchema: CustomizePromptSchema,
+                "**USE THIS when user wants to wrap/integrate an API**. Complete 7-step guide from project generation to deployment for wrapping external APIs with Nuxt MCP.",
+            argsSchema: ScaffoldApiPromptSchema.shape,
         },
-        async ({ use_case }: any) => ({
+        async ({ api_description }: any) => ({
             messages: [
                 {
                     role: "user",
                     content: {
                         type: "text",
-                        text: `You want to customize the MCP Starter template for: "${use_case}"
+                        text: `You want to create a Nuxt MCP server for: "${api_description}"
 
-Here's your step-by-step customization plan:
+**Step-by-step guide:**
 
-1. **Update Content Sources** (content.config.ts)
-   - Replace 'docs' collection source with your documentation
-   - Replace 'codebase' collection with your data source
-   - Update schemas to match your data structure
+1. **Generate starter project**
+   - Use create_nuxt_project tool
+   - Set data_source: 'api'
+   - Set use_case: "${api_description}"
+   - Set auth_required: true (if API needs key)
 
-2. **Modify Tools** (server/api/mcp/*.ts)
-   - Update get_documentation handler for your docs structure
-   - Replace get_code with tool for your data type
-   - Keep or modify generate_mcp_boilerplate as needed
+2. **Study the API documentation**
+   - Identify core endpoints to expose
+   - Note required parameters
+   - Check authentication method
+   - Review rate limits
 
-3. **Update Resources** (server/routes/mcp.ts)
-   - Change URIs to your namespace: resource://your-app/...
-   - Update resource data to index your content
-   - Keep JSON structure for LLM compatibility
+3. **Design your tools**
+   - Follow list-search pattern: consolidate operations
+   - Use get_pattern tool to see examples
+   - Plan tool names (action-oriented, snake_case)
+   - Map API endpoints to tool operations
 
-4. **Write Evaluations** (tests/mcp/mcp.eval.ts)
-   - Create 10 realistic questions for your use case
-   - Verify answers manually first
-   - Use toolCallAccuracy scorer
+4. **Implement tools**
+   - Create schemas in server/utils/schemas.ts
+   - Create handlers in server/api/mcp/*.ts
+   - Register tools in server/routes/mcp.ts
+   - Use get_pattern for validation, caching, error-handling
 
-5. **Update Documentation** (content/docs/*.md)
-   - Replace with your domain-specific docs
-   - Keep structure: introduction, setup, architecture, etc.
-   - Include examples relevant to your use case
+5. **Handle authentication**
+   - Use get_pattern with pattern: 'auth'
+   - Accept API key as parameter or env var
+   - Don't cache authenticated requests
+   - Provide clear error messages
 
-6. **Test Everything**
-   - Run unit tests: pnpm test
-   - Run evaluations: pnpm eval
-   - Try MCP Inspector: pnpm mcp:studio
+6. **Test with evaluations**
+   - Write 10 realistic scenarios
+   - Test tool selection accuracy
+   - Verify multi-step workflows
+   - Check error handling
 
-Use get_code to explore implementation details and generate_mcp_boilerplate to create new tools.`,
+7. **Debug issues**
+   - Use debug_setup tool for common problems
+   - Test with MCP Inspector
+   - Check Claude Desktop integration
+
+**Next steps:**
+Use create_nuxt_project to generate starter code, then use get_pattern to implement specific features.`,
                     },
                 },
             ],
@@ -245,168 +226,79 @@ Use get_code to explore implementation details and generate_mcp_boilerplate to c
     );
 
     server.registerPrompt(
-        "understand_pattern",
+        "add_tool",
         {
-            title: "Understand Pattern",
-            description: "Explain MCP pattern with examples from this codebase",
-            argsSchema: UnderstandPatternSchema,
+            title: "Add Tool to MCP Server",
+            description: "**USE THIS when user asks how to add/create a new tool**. Step-by-step guide for implementing a new tool in existing Nuxt MCP server (schema → handler → registration → tests).",
+            argsSchema: AddToolPromptSchema.shape,
         },
-        async ({ pattern }: any) => {
-            const explanations: Record<string, string> = {
-                "list-search": `# List vs Search Pattern
+        async ({ tool_purpose }: any) => ({
+            messages: [
+                {
+                    role: "user",
+                    content: {
+                        type: "text",
+                        text: `You want to add a tool that: "${tool_purpose}"
 
-**Concept:** Consolidate related operations (list/get/search) into one tool instead of separate tools for each.
+**Step-by-step guide:**
 
-**Why:** Reduces context overhead, mirrors how users think, easier for LLMs to discover.
+1. **Define the schema** (server/utils/schemas.ts)
+   \`\`\`typescript
+   export const YourToolSchema = z.object({
+     param: z.string().describe('Description'),
+     limit: z.number().min(1).max(100).optional().default(10),
+   })
+   \`\`\`
 
-**Implementation in this template:**
+2. **Create API handler** (server/api/mcp/your-tool.get.ts)
+   - Use get_pattern with pattern: 'list-search' for consolidation
+   - Use get_pattern with pattern: 'caching' for performance
+   - Use get_pattern with pattern: 'validation' for schemas
+   - Use get_pattern with pattern: 'error-handling' for errors
 
-See server/api/mcp/get-documentation.get.ts:
-- No params → List mode (all sections)
-- section param → Get mode (specific section)
-- search_query param → Search mode (find relevant)
+3. **Register tool** (server/routes/mcp.ts)
+   \`\`\`typescript
+   server.registerTool('your_tool', {
+     title: 'Your Tool',
+     description: 'What it does and when to use it',
+     inputSchema: YourToolSchema,
+     annotations: {
+       readOnlyHint: true,
+       destructiveHint: false,
+       idempotentHint: true,
+       openWorldHint: false,
+     },
+   }, async (args) => {
+     const data = await $fetch('/api/mcp/your-tool', { query: args })
+     return { content: [{ type: 'text', text: JSON.stringify(data) }] }
+   })
+   \`\`\`
 
-Same pattern in get-code.get.ts for codebase exploration.
+4. **Write evaluations** (tests/mcp/mcp.eval.ts)
+   - Add realistic test cases
+   - Verify tool selection
+   - Test parameter handling
+   - Check error scenarios
 
-**When to use:**
-- List: Category/module known ("show all API handlers")
-- Search: Conceptual topic ("find caching code")
+5. **Test the tool**
+   - Run pnpm dev
+   - Use MCP Inspector: npx @modelcontextprotocol/inspector http://localhost:3000/mcp
+   - Test in Claude Desktop
+   - Run evaluations: pnpm eval
 
-**Benefits:**
-- 3 tools instead of 9 (3 operations × 3 data types)
-- LLM sees complete capability in one description
-- Consistent interface across data types`,
-
-                caching: `# Caching Pattern
-
-**Concept:** Cache API responses to reduce load and improve response times.
-
-**Implementation in this template:**
-
-See server/api/mcp/get-documentation.get.ts:
-
-\`\`\`typescript
-export default defineCachedEventHandler(async (event) => {
-  // Handler logic
-}, {
-  maxAge: 60 * 60,  // 1 hour
-  getKey: (event) => {
-    const { section, search_query } = getQuery(event)
-    return \`docs-\${section || ''}-\${search_query || 'list'}\`
-  }
-})
-\`\`\`
-
-**Key points:**
-- Cache for 1 hour (content doesn't change often)
-- Custom cache key includes query params
-- Different params = different cache entries
-
-**When to use:**
-- Content that doesn't change frequently
-- Expensive queries (database, external API)
-- High-traffic endpoints
-
-**Avoid caching:**
-- User-specific data
-- Real-time data
-- Data that changes frequently`,
-
-                validation: `# Input Validation Pattern
-
-**Concept:** Use Zod schemas to validate all tool parameters before processing.
-
-**Implementation in this template:**
-
-See server/api/mcp/get-documentation.get.ts:
-
-\`\`\`typescript
-import { z } from 'zod'
-
-const GetDocSchema = z.object({
-  section: z.string().optional(),
-  search_query: z.string().optional(),
-})
-
-const { section, search_query } = await getValidatedQuery(event, GetDocSchema.parse)
-\`\`\`
-
-**Benefits:**
-- Type safety at runtime
-- Clear error messages for LLMs
-- Auto-generated documentation
-- Prevents invalid queries
-
-**Best practices:**
-- Use .optional() for optional params
-- Add .default() for sensible defaults
-- Use .enum() for fixed options
-- Add .min()/.max() for numbers/strings
-
-**MCP Integration:**
-Pass same schema to tool registration:
-
-\`\`\`typescript
-server.registerTool('tool_name', {
-  argsSchema: GetDocSchema,
-  // ...
-})
-\`\`\``,
-
-                "error-handling": `# Error Handling Pattern
-
-**Concept:** Provide LLM-friendly errors that guide toward correct usage.
-
-**Implementation in this template:**
-
-See server/api/mcp/get-documentation.get.ts:
-
-\`\`\`typescript
-if (!doc) {
-  const allDocs = await queryCollection(event, 'docs').all()
-  const available = allDocs.map(d => d.section).join(', ')
-
-  throw createError({
-    statusCode: 404,
-    message: \`Section '\${query.section}' not found. Available: \${available}\`
-  })
-}
-\`\`\`
-
-**Key principles:**
-1. Suggest corrections ("Did you mean X?")
-2. Show available options
-3. Guide to alternative tools/modes
-4. Use natural language
-
-**Bad error:**
-"Not found"
-
-**Good error:**
-"Section 'toolz' not found. Did you mean 'tools'? Available: introduction, setup, architecture, tools, resources, prompts, testing, customization"
-
-**LLM response:**
-LLM can retry with correct section name automatically.`,
-            };
-
-            return {
-                messages: [
-                    {
-                        role: "user",
-                        content: {
-                            type: "text",
-                            text: explanations[pattern] || "Unknown pattern",
-                        },
+**Troubleshooting:**
+If you encounter issues, use debug_setup tool with the appropriate issue type.`,
                     },
-                ],
-            };
-        },
+                },
+            ],
+        }),
     );
 
     return server;
 }
 
 export default defineEventHandler(async (event) => {
+    // Browser requests redirected to docs - MCP requires SSE transport
     if (getHeader(event, "accept")?.includes("text/html")) {
         return sendRedirect(event, "/docs/guide/ai/mcp");
     }
@@ -416,6 +308,7 @@ export default defineEventHandler(async (event) => {
     const transport: StreamableHTTPServerTransport =
         new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
 
+    // Cleanup on connection close - prevents memory leaks
     event.node.res.on("close", () => {
         transport.close();
         server.close();

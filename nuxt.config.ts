@@ -12,12 +12,11 @@ export default defineNuxtConfig({
     },
   },
 
-  // Auto-import utilities
+  // Must manually import server utils - Nitro doesn't auto-import server-side code
   imports: {
     dirs: ['server/utils'],
   },
 
-  // Enable server routes
   nitro: {
     experimental: {
       openAPI: true,

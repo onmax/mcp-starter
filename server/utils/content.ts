@@ -1,6 +1,3 @@
-/**
- * Extract H1 title from markdown AST body
- */
 export function extractTitle(doc: any): string | undefined {
   if (!doc.body?.children) return undefined
 
@@ -12,9 +9,6 @@ export function extractTitle(doc: any): string | undefined {
   return h1.children[0].value
 }
 
-/**
- * Extract first paragraph as description
- */
 export function extractDescription(doc: any): string | undefined {
   if (!doc.body?.children) return undefined
 
@@ -26,13 +20,10 @@ export function extractDescription(doc: any): string | undefined {
   return firstP.children[0].value
 }
 
-/**
- * Get markdown content as string
- */
 export function getMarkdownContent(doc: any): string {
   if (!doc.body) return ''
 
-  // Simple extraction - you could use remark/rehype for better results
+  // Simple AST walk - remark/rehype would be more robust but adds dependency weight
   const extractText = (node: any): string => {
     if (typeof node === 'string') return node
     if (node.value) return node.value

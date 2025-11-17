@@ -1,226 +1,423 @@
-# MCP Starter Template
+# Nuxt MCP Starter
 
-A self-documenting MCP server template for building your own Model Context Protocol servers. This template is itself a working MCP server you can query to learn how to customize it.
+Nuxt 4 template for building production-ready MCP servers. Learn MCP patterns by querying this server itself.
 
-## What This Template Provides
+## What This Is
 
-- **Documentation Access**: Query comprehensive guides on MCP patterns, setup, and customization
-- **Code Exploration**: Explore the template's own implementation to learn patterns
-- **Boilerplate Generation**: Generate tool/resource/prompt code based on this template
-- **Testing Examples**: Evalite test suite showing how to validate MCP servers with LLMs
+A Nuxt MCP server that teaches you how to build MCP servers with Nuxt. Query it to:
+- Get working code examples for MCP patterns
+- Generate complete Nuxt MCP projects
+- Debug common MCP setup issues
+- Learn best practices through guided workflows
 
 ## Quick Start
 
 ### Prerequisites
 
-- Node.js 18+ (run `fnm use 24` for Node 24)
-- pnpm (`npm install -g pnpm`)
+- Node.js 18+ (`fnm use 24`)
+- pnpm
 - OpenAI API key (for evaluations)
 
 ### Installation
 
 ```bash
 pnpm install
-```
-
-### Development
-
-Start the dev server:
-
-```bash
+cp .env.example .env  # Add OPENAI_API_KEY
 pnpm dev
 ```
 
-MCP server available at: `http://localhost:3000/mcp`
+MCP server runs at: `http://localhost:3000/mcp`
 
-### Testing the MCP Server
-
-**Option 1: MCP Inspector**
+### Testing
 
 ```bash
-pnpm mcp:studio
-```
-
-**Option 2: Run Evaluations**
-
-```bash
-cp .env.example .env
-# Add OPENAI_API_KEY to .env
-pnpm eval
+npx @modelcontextprotocol/inspector http://localhost:3000/mcp  # MCP Inspector
+pnpm eval        # Run evaluations
+pnpm eval:ui     # View results
 ```
 
 ## Architecture
 
-### Overview
+**Clean separation: Protocol → Handlers → Data**
 
-Nuxt 4 application with MCP server on `/mcp` route using StreamableHTTPServerTransport.
-
-### Content Sources
-
-1. **Documentation** (`content/docs/`): README sections as queryable markdown
-2. **Codebase** (GitHub): Template's own source code for pattern exploration
-
-### MCP Capabilities
-
-**Resources:**
-
-- `resource://mcp-starter/documentation` - Doc sections index
-- `resource://mcp-starter/codebase` - Code files index
-
-**Tools:**
-
-- `get_documentation` - Query docs (list/get/search modes)
-- `get_code` - Explore code (list/get/search modes)
-- `generate_mcp_boilerplate` - Generate tool/resource/prompt code
-
-**Prompts:**
-
-- `customize_template` - Step-by-step customization guide
-- `understand_pattern` - Explain MCP patterns with examples
-
-## Tool Design Patterns
-
-### Consolidated Workflow Tools
-
-Following MCP best practices, tools handle complete workflows instead of single operations:
-
-**`get_documentation` handles:**
-
-- List all sections (no params)
-- Get specific section (`section` param)
-- Search docs (`search_query` param)
-
-**Why?** Reduces context overhead, mirrors user intent, easier for LLMs.
-
-### List vs Search Pattern
-
-**List**: When category/module known explicitly
-
-- "Show me all documentation sections"
-- "List code files in api-handlers category"
-
-**Search**: When topic/task is conceptual
-
-- "Find documentation about caching"
-- "Search code for validation patterns"
-
-## Testing Strategy
-
-### Unit Tests
-
-```bash
-pnpm test
+```
+server/
+  routes/mcp.ts           # MCP protocol (tools, resources, prompts)
+  api/mcp/
+    get-pattern.get.ts    # Pattern examples handler
+    create-nuxt-project.get.ts  # Project generator
+    debug-setup.get.ts    # Debug helper
+  utils/
+    schemas.ts            # Zod schemas (autoimported)
+tests/mcp/
+  mcp.eval.ts            # Evaluations
 ```
 
-Covers:
+### MCP Primitives
 
-- Tool registration
-- Resource schemas
-- Input validation
-- Error messages
+Following MCP spec:
 
-### Evaluations
+1. **Resources** - Static data indexes (patterns, examples)
+2. **Tools** - Parameterized operations (get_pattern, create_nuxt_project, debug_setup)
+3. **Prompts** - Guided workflows (scaffold_for_api, add_tool)
 
-```bash
-pnpm eval        # Run evaluations
-pnpm eval:ui     # View results UI
-pnpm eval:watch  # Watch mode
+## MCP Capabilities
+
+### Resources (2)
+
+Browse available data:
+
+- **`resource://nuxt-mcp-starter/patterns`** - Index of 6 MCP patterns (list-search, caching, validation, error-handling, pagination, auth)
+- **`resource://nuxt-mcp-starter/examples`** - Example projects (Recipe API, Database, File Search)
+
+### Tools (3)
+
+Core functionality:
+
+**`get_pattern`** - Get MCP implementation patterns with working code
+- Params: `pattern` (list-search | caching | validation | error-handling | pagination | auth), `format` (code | explanation | both)
+- Returns: Code examples + explanations for Nuxt MCP patterns
+
+**`create_nuxt_project`** - Generate complete Nuxt MCP project
+- Params: `data_source` (api | database | file | custom), `use_case` (description), `auth_required` (boolean)
+- Returns: Complete project code with handlers, schemas, MCP registration, evaluations
+
+**`debug_setup`** - Troubleshoot MCP setup issues
+- Params: `issue` (tools-not-showing | cors-error | schema-validation | transport-setup | general), `error_message` (optional)
+- Returns: Diagnosis, solutions, troubleshooting steps
+
+### Prompts (2)
+
+Guided workflows:
+
+**`scaffold_for_api`** - Step-by-step guide for wrapping an API with MCP
+- Param: `api_description` (e.g., "GitHub REST API")
+- Returns: 7-step guide from generation to deployment
+
+**`add_tool`** - Guide for adding a tool to existing MCP server
+- Param: `tool_purpose` (what the tool should do)
+- Returns: Step-by-step implementation guide
+
+## Usage Examples
+
+### Creating a New MCP Project
+
+```
+User: I want to create a Nuxt MCP that queries a recipe API
+MCP: [Uses create_nuxt_project with data_source: 'api', use_case: 'recipe API']
+      [Returns complete project code with:
+       - Zod schemas for validation
+       - API handler with caching
+       - MCP tool registration
+       - Evaluation test cases]
 ```
 
-10 realistic scenarios testing:
+### Learning Patterns
 
-- Documentation queries
-- Code exploration
-- Boilerplate generation
-- Multi-step workflows
-- Edge cases
+```
+User: Show me how to implement caching in my MCP
+MCP: [Uses get_pattern with pattern: 'caching']
+     [Returns code example + explanation of caching strategy]
+```
 
-## Customizing This Template
+### Debugging
 
-### 1. Update Content Sources
+```
+User: My tools aren't showing up in Claude Desktop
+MCP: [Uses debug_setup with issue: 'tools-not-showing']
+     [Returns 6 troubleshooting steps with specific fixes]
+```
 
-Edit `content.config.ts` to point to your documentation and code:
+## MCP Best Practices
+
+Following [MCP SDK guidelines](https://modelcontextprotocol.io):
+
+### 1. Build for Workflows, Not API Endpoints
+
+Consolidate related operations into single tools:
 
 ```typescript
-source: 'your-docs/**/*.md'
+// ❌ BAD: 3 separate tools
+list_items()
+get_item(id)
+search_items(query)
+
+// ✅ GOOD: 1 consolidated tool
+get_items({ id?, query? })
+  // No params → list all
+  // id param → get specific
+  // query param → search
 ```
 
-### 2. Modify Tools
+### 2. Optimize for Limited Context
 
-Each tool in `server/api/mcp/*.ts`:
+- Concise tool descriptions (20-30 words)
+- High-signal responses, not data dumps
+- Human-readable identifiers (names over IDs)
+- Pagination for large datasets
 
-- Update Zod schemas for your parameters
-- Modify handler logic for your data
-- Keep caching strategy
+### 3. Design Actionable Error Messages
 
-### 3. Update Resources
+```typescript
+// ❌ BAD
+throw createError({ statusCode: 404, message: 'Not found' })
 
-Edit `server/routes/mcp.ts` resource registration:
+// ✅ GOOD
+const available = items.map(i => i.id).join(', ')
+throw createError({ 
+  statusCode: 404, 
+  message: `Item '${id}' not found. Available: ${available}` 
+})
+```
 
-- Change URIs to your namespace
-- Update data fetching logic
-- Keep JSON structure
+### 4. Tool Annotations
+
+Always include annotations:
+
+```typescript
+server.registerTool('tool_name', {
+  // ...
+  annotations: {
+    readOnlyHint: true,        // Read-only operation
+    destructiveHint: false,    // Non-destructive
+    idempotentHint: true,      // Repeatable with same result
+    openWorldHint: false,      // Internal data (true for external APIs)
+  }
+})
+```
+
+### 5. Input Validation with Zod
+
+Define schemas in `server/utils/schemas.ts`:
+
+```typescript
+export const ToolSchema = z.object({
+  query: z.string().describe('Search query'),
+  limit: z.number().min(1).max(100).optional().default(10),
+  category: z.enum(['all', 'active', 'archived']).optional(),
+})
+```
+
+Use in handlers AND tool registration:
+
+```typescript
+// Handler
+const args = await getValidatedQuery(event, ToolSchema.parse)
+
+// MCP registration
+server.registerTool('tool', { inputSchema: ToolSchema, ... })
+```
+
+### 6. Response Caching
+
+Cache expensive operations:
+
+```typescript
+defineCachedEventHandler(async (event) => {
+  // Handler logic
+}, {
+  maxAge: 60 * 60,  // 1 hour for stable content
+  getKey: (event) => {
+    const { query } = getQuery(event)
+    return `tool-${query || 'default'}`
+  }
+})
+```
+
+**When to cache:**
+- Static content: 24h
+- Reference data: 1h
+- User-specific: 5min
+- Real-time: Don't cache
+- Authenticated: `maxAge: 0`
+
+## Implementation Guide
+
+### 1. Define Schema
+
+`server/utils/schemas.ts`:
+
+```typescript
+import { z } from 'zod'
+
+export const SearchSchema = z.object({
+  query: z.string().describe('Search term'),
+  limit: z.number().min(1).max(100).optional().default(10),
+})
+```
+
+### 2. Create Handler
+
+`server/api/mcp/search.get.ts`:
+
+```typescript
+export default defineCachedEventHandler(async (event) => {
+  const { query, limit } = await getValidatedQuery(event, SearchSchema.parse)
+  
+  const results = await yourDataSource.search(query)
+  
+  return { 
+    query, 
+    results: results.slice(0, limit),
+    total: results.length 
+  }
+}, {
+  maxAge: 60 * 5,
+  getKey: (event) => {
+    const { query } = getQuery(event)
+    return `search-${query}`
+  }
+})
+```
+
+### 3. Register Tool
+
+`server/routes/mcp.ts`:
+
+```typescript
+server.registerTool('search', {
+  title: 'Search Items',
+  description: 'Search items by query term with pagination',
+  inputSchema: SearchSchema,
+  annotations: {
+    readOnlyHint: true,
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: false,
+  },
+}, async (args: any) => {
+  const data = await $fetch('/api/mcp/search', { query: args })
+  return { 
+    content: [{ 
+      type: 'text', 
+      text: JSON.stringify(data, null, 2) 
+    }] 
+  }
+})
+```
 
 ### 4. Write Evaluations
 
-Copy `tests/mcp/mcp.eval.ts`:
+`tests/mcp/mcp.eval.ts`:
 
-- Replace questions with your use cases
-- Verify answers manually first
-- Run frequently during development
+```typescript
+evalite('Search Tool', {
+  data: async () => [{
+    input: 'Search for recipes containing chocolate',
+    expected: [{ toolName: 'search', args: { query: 'chocolate' } }],
+  }],
+  task: async (input) => {
+    const mcpClient = await createMCPClient({ 
+      transport: { type: 'http', url: 'http://localhost:3000/mcp' } 
+    })
+    const result = await generateText({ 
+      model, 
+      prompt: input, 
+      tools: await mcpClient.tools() 
+    })
+    return result.toolCalls
+  },
+  scorers: [toolCallAccuracy]
+})
+```
+
+## Patterns Reference
+
+Use `get_pattern` tool to see full implementations.
+
+### List-Search Pattern
+
+Consolidate list/get/search into one tool with optional params.
+
+### Caching Pattern
+
+Cache responses with custom keys and TTL based on data volatility.
+
+### Validation Pattern
+
+Zod schemas for runtime validation and TypeScript inference.
+
+### Error-Handling Pattern
+
+Actionable errors with suggestions and available options.
+
+### Pagination Pattern
+
+Handle large datasets with limit/offset and hasMore metadata.
+
+### Auth Pattern
+
+API key validation with env var fallback and clear error messages.
+
+## Deployment
+
+Standard Nuxt deployment with MCP route at `/mcp`:
+
+```bash
+# Vercel
+vercel deploy
+
+# NuxtHub
+npx nuxthub deploy
+
+# Netlify
+pnpm build
+```
+
+**Configure Claude Desktop** (`~/.config/claude/claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "nuxt-mcp-starter": {
+      "url": "https://your-domain.com/mcp"
+    }
+  }
+}
+```
 
 ## File Structure
 
 ```
 server/
-  routes/mcp.ts              # Main MCP server
+  routes/mcp.ts                    # MCP server + tool/resource/prompt registration
   api/mcp/
-    get-documentation.get.ts # Doc tool handler
-    get-code.get.ts          # Code tool handler
-    generate-mcp-boilerplate.get.ts # Generation tool
+    get-pattern.get.ts             # Pattern examples with code
+    create-nuxt-project.get.ts     # Project generator
+    debug-setup.get.ts             # Debug helper
   utils/
-    content.ts               # Markdown utilities
-content/
-  docs/                      # Documentation sections
+    schemas.ts                     # Zod schemas (autoimported globally)
 tests/mcp/
-  tools.test.ts              # Unit tests
-  resources.test.ts
-  prompts.test.ts
-  mcp.eval.ts                # Evalite scenarios
+  mcp.eval.ts                      # Evaluation test suites
 ```
 
-## Best Practices from This Template
+## Troubleshooting
 
-### Input Validation
+Use `debug_setup` tool for common issues:
 
-- Zod schemas for all params
-- Optional params with defaults
-- Clear constraints
+**Tools not showing in Claude Desktop:**
+1. Verify server running at `http://localhost:3000/mcp`
+2. Check `claude_desktop_config.json` has correct URL
+3. Restart Claude Desktop completely
+4. Test with MCP Inspector
 
-### Error Handling
+**Schema validation errors:**
+1. Ensure schema matches between handler and registration
+2. Use `inputSchema` (not `argsSchema`) in `registerTool`
+3. Test schema separately: `Schema.safeParse({ ... })`
 
-- LLM-friendly error messages
-- Suggest valid alternatives
-- Guide to correct usage
-
-### Caching
-
-- 1-hour cache for content endpoints
-- Custom cache keys per query
-- Reduces load, improves response time
-
-### Testing
-
-- Unit tests for registration
-- Evalite for LLM behavior
-- 10+ realistic scenarios
+**Transport/connection issues:**
+1. Use `StreamableHTTPServerTransport` for HTTP
+2. Add cleanup: `event.node.res.on('close', () => { transport.close(); server.close() })`
+3. Read body: `await readBody(event)`
 
 ## Resources
 
-- [MCP Documentation](https://modelcontextprotocol.io)
-- [MCP SDK](https://github.com/modelcontextprotocol/sdk)
-- [Nuxt Content](https://content.nuxt.com)
-- [Evalite](https://evalite.dev)
+- [MCP Protocol Spec](https://modelcontextprotocol.io)
+- [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk)
+- [Nuxt Documentation](https://nuxt.com)
+- [Evalite Testing](https://evalite.dev)
+- [Building Nuxt MCP Guide](https://nuxt.com/blog/building-nuxt-mcp)
 
 ## License
 

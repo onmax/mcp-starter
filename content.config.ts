@@ -1,32 +1,21 @@
-import { defineCollection, defineContentConfig, z } from '@nuxt/content'
+import { defineCollection, defineContentConfig } from '@nuxt/content'
 
-const docsSchema = z.object({
-  title: z.string(),
-  description: z.string(),
-  section: z.string(),
-})
-
-const codebaseSchema = z.object({
-  filepath: z.string(),
-  purpose: z.string(),
-  category: z.enum(['routes', 'api-handlers', 'config', 'tests', 'utils']),
-})
-
-// Note: Using local markdown sources for codebase collection instead of GitHub remote.
-// This approach better supports the template's fork-and-customize model, where users
-// can directly edit documentation alongside code. The codebase collection will contain
-// markdown files with code examples and explanations extracted from the actual source files.
 export default defineContentConfig({
   collections: {
+    // README as single doc source
     docs: defineCollection({
       type: 'page',
-      source: 'content/docs/**/*.md',
-      schema: docsSchema,
+      source: 'README.md',
     }),
+    // Local codebase (switch to GitHub remote after publishing)
     codebase: defineCollection({
       type: 'page',
-      source: 'content/codebase/**/*.md',
-      schema: codebaseSchema,
+      source: '{server/{routes,api/mcp,utils}/**/*.ts,tests/**/*.ts,*.config.ts}',
+      // To use GitHub remote instead:
+      // source: {
+      //   repository: 'https://github.com/your-org/your-repo',
+      //   include: 'server/**/*.ts',
+      // },
     }),
   },
 })

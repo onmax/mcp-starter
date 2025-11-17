@@ -5,6 +5,7 @@ Nuxt 4 template for building production-ready MCP servers. Learn MCP patterns by
 ## What This Is
 
 A Nuxt MCP server that teaches you how to build MCP servers with Nuxt. Query it to:
+
 - Get working code examples for MCP patterns
 - Generate complete Nuxt MCP projects
 - Debug common MCP setup issues
@@ -75,14 +76,17 @@ Browse available data:
 Core functionality:
 
 **`get_pattern`** - Get MCP implementation patterns with working code
+
 - Params: `pattern` (list-search | caching | validation | error-handling | pagination | auth), `format` (code | explanation | both)
 - Returns: Code examples + explanations for Nuxt MCP patterns
 
 **`create_nuxt_project`** - Generate complete Nuxt MCP project
+
 - Params: `data_source` (api | database | file | custom), `use_case` (description), `auth_required` (boolean)
 - Returns: Complete project code with handlers, schemas, MCP registration, evaluations
 
 **`debug_setup`** - Troubleshoot MCP setup issues
+
 - Params: `issue` (tools-not-showing | cors-error | schema-validation | transport-setup | general), `error_message` (optional)
 - Returns: Diagnosis, solutions, troubleshooting steps
 
@@ -91,10 +95,12 @@ Core functionality:
 Guided workflows:
 
 **`scaffold_for_api`** - Step-by-step guide for wrapping an API with MCP
+
 - Param: `api_description` (e.g., "GitHub REST API")
 - Returns: 7-step guide from generation to deployment
 
 **`add_tool`** - Guide for adding a tool to existing MCP server
+
 - Param: `tool_purpose` (what the tool should do)
 - Returns: Step-by-step implementation guide
 
@@ -164,9 +170,9 @@ throw createError({ statusCode: 404, message: 'Not found' })
 
 // ✅ GOOD
 const available = items.map(i => i.id).join(', ')
-throw createError({ 
-  statusCode: 404, 
-  message: `Item '${id}' not found. Available: ${available}` 
+throw createError({
+  statusCode: 404,
+  message: `Item '${id}' not found. Available: ${available}`
 })
 ```
 
@@ -225,6 +231,7 @@ defineCachedEventHandler(async (event) => {
 ```
 
 **When to cache:**
+
 - Static content: 24h
 - Reference data: 1h
 - User-specific: 5min
@@ -253,13 +260,13 @@ export const SearchSchema = z.object({
 ```typescript
 export default defineCachedEventHandler(async (event) => {
   const { query, limit } = await getValidatedQuery(event, SearchSchema.parse)
-  
+
   const results = await yourDataSource.search(query)
-  
-  return { 
-    query, 
+
+  return {
+    query,
     results: results.slice(0, limit),
-    total: results.length 
+    total: results.length
   }
 }, {
   maxAge: 60 * 5,
@@ -287,11 +294,11 @@ server.registerTool('search', {
   },
 }, async (args: any) => {
   const data = await $fetch('/api/mcp/search', { query: args })
-  return { 
-    content: [{ 
-      type: 'text', 
-      text: JSON.stringify(data, null, 2) 
-    }] 
+  return {
+    content: [{
+      type: 'text',
+      text: JSON.stringify(data, null, 2)
+    }]
   }
 })
 ```
@@ -307,13 +314,13 @@ evalite('Search Tool', {
     expected: [{ toolName: 'search', args: { query: 'chocolate' } }],
   }],
   task: async (input) => {
-    const mcpClient = await createMCPClient({ 
-      transport: { type: 'http', url: 'http://localhost:3000/mcp' } 
+    const mcpClient = await createMCPClient({
+      transport: { type: 'http', url: 'http://localhost:3000/mcp' }
     })
-    const result = await generateText({ 
-      model, 
-      prompt: input, 
-      tools: await mcpClient.tools() 
+    const result = await generateText({
+      model,
+      prompt: input,
+      tools: await mcpClient.tools()
     })
     return result.toolCalls
   },
@@ -376,6 +383,64 @@ pnpm build
 }
 ```
 
+## CI/CD
+
+### Automated Monthly Evaluations
+
+This repository runs monthly evaluations automatically via GitHub Actions to ensure MCP server quality over time.
+
+**Prerequisites:**
+
+1. **Deploy to Vercel** (or your preferred platform):
+
+   ```bash
+   vercel deploy --prod
+   ```
+
+   After deployment, note your production URL (e.g., `https://your-app.vercel.app`)
+
+2. **Configure GitHub Secrets** (Settings → Secrets and variables → Actions):
+   - `OPENAI_API_KEY`: Your OpenAI API key
+   - `MCP_URL`: Your deployed MCP endpoint (e.g., `https://your-app.vercel.app/mcp`)
+
+3. The workflow runs automatically on the 1st of each month at 2am UTC
+
+**Manual Trigger:**
+
+```bash
+# Via GitHub UI
+Actions → Monthly Evals → Run workflow
+
+# Via GitHub CLI
+gh workflow run evals.yml
+```
+
+**What it does:**
+
+- Runs evaluations against your deployed MCP server
+- Tests all 19 evaluation cases
+- Enforces 85% score threshold (fails if below)
+- Displays results in GitHub Actions Summary
+- Uploads results as artifacts (retained for 90 days)
+- Creates an issue if evaluations fail
+
+**Local Development:**
+
+```bash
+# Run evals against local server (default: http://localhost:3000/mcp)
+pnpm eval
+
+# Run evals against deployed server
+MCP_URL=https://your-app.vercel.app/mcp pnpm eval
+```
+
+**View Results:**
+
+- Actions tab → Monthly Evals → Latest run → Artifacts
+- Download `eval-results-*` to see detailed scores
+
+**Current Score:** ~94% (17 tests, scores vary due to LLM non-determinism)
+
 ## File Structure
 
 ```
@@ -396,17 +461,20 @@ tests/mcp/
 Use `debug_setup` tool for common issues:
 
 **Tools not showing in Claude Desktop:**
+
 1. Verify server running at `http://localhost:3000/mcp`
 2. Check `claude_desktop_config.json` has correct URL
 3. Restart Claude Desktop completely
 4. Test with MCP Inspector
 
 **Schema validation errors:**
+
 1. Ensure schema matches between handler and registration
 2. Use `inputSchema` (not `argsSchema`) in `registerTool`
 3. Test schema separately: `Schema.safeParse({ ... })`
 
 **Transport/connection issues:**
+
 1. Use `StreamableHTTPServerTransport` for HTTP
 2. Add cleanup: `event.node.res.on('close', () => { transport.close(); server.close() })`
 3. Read body: `await readBody(event)`

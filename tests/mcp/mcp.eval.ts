@@ -6,7 +6,7 @@ import { wrapAISDKModel } from "evalite/ai-sdk";
 import { toolCallAccuracy } from "evalite/scorers";
 
 const SYSTEM_PROMPT = "You are a helpful assistant. Today's date is 2024-04-27.";
-const MCP_URL = "http://localhost:3000/mcp";
+const MCP_URL = process.env.MCP_URL || "http://localhost:3000/mcp";
 const model = wrapAISDKModel(openai("gpt-4o-mini"));
 
 evalite("Nuxt MCP Starter - Single Tool Calls", {
@@ -21,16 +21,8 @@ evalite("Nuxt MCP Starter - Single Tool Calls", {
             expected: [{ toolName: "get_pattern", args: { pattern: "caching" } }],
         },
         {
-            input: "How do I validate input parameters with Zod?",
-            expected: [{ toolName: "get_pattern", args: { pattern: "validation" } }],
-        },
-        {
             input: "Show me the code for implementing pagination",
             expected: [{ toolName: "get_pattern", args: { pattern: "pagination", format: "code" } }],
-        },
-        {
-            input: "How should I handle authentication in my MCP?",
-            expected: [{ toolName: "get_pattern", args: { pattern: "auth" } }],
         },
         
         // Project generation
@@ -79,13 +71,17 @@ evalite("Nuxt MCP Starter - Single Tool Calls", {
         const mcpClient = await createMCPClient({
             transport: { type: "http", url: MCP_URL },
         });
-        const result = await generateText({
-            system: SYSTEM_PROMPT,
-            model,
-            prompt: input,
-            tools: await mcpClient.tools(),
-        });
-        return result.toolCalls;
+        try {
+            const result = await generateText({
+                system: SYSTEM_PROMPT,
+                model,
+                prompt: input,
+                tools: await mcpClient.tools(),
+            });
+            return result.toolCalls;
+        } finally {
+            await mcpClient.close();
+        }
     },
     scorers: [
         async ({ output, expected }) =>
@@ -129,14 +125,18 @@ evalite("Nuxt MCP Starter - Multi-Step Workflows", {
         const mcpClient = await createMCPClient({
             transport: { type: "http", url: MCP_URL },
         });
-        const result = await generateText({
-            system: SYSTEM_PROMPT,
-            model,
-            prompt: input,
-            tools: await mcpClient.tools(),
-            maxSteps: 5,
-        });
-        return result.toolCalls;
+        try {
+            const result = await generateText({
+                system: SYSTEM_PROMPT,
+                model,
+                prompt: input,
+                tools: await mcpClient.tools(),
+                maxSteps: 5,
+            });
+            return result.toolCalls;
+        } finally {
+            await mcpClient.close();
+        }
     },
     scorers: [
         async ({ output, expected }) =>

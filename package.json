@@ -1,0 +1,50 @@
+{
+  "name": "mcp-starter",
+  "type": "module",
+  "private": true,
+  "homepage": "https://github.com/onmax/mcp-starter#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/onmax/mcp-starter.git"
+  },
+  "bugs": {
+    "url": "https://github.com/onmax/mcp-starter/issues"
+  },
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "test": "vitest",
+    "typecheck": "nuxt typecheck",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "eval": "evalite run",
+    "eval:ui": "evalite serve",
+    "eval:watch": "evalite watch",
+    "mcp:studio": "npx @modelcontextprotocol/inspector --server-url http://localhost:3000/mcp"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.22.0",
+    "@nuxt/content": "3.8.2",
+    "@nuxt/eslint": "1.10.0",
+    "better-sqlite3": "^12.4.1",
+    "eslint": "^9.39.1",
+    "h3": "^1.15.4",
+    "nuxt": "^4.2.1",
+    "vue": "^3.5.24",
+    "vue-router": "^4.6.3",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@ai-sdk/mcp": "^0.0.8",
+    "@ai-sdk/openai": "3.0.0-beta.60",
+    "@antfu/eslint-config": "^6.2.0",
+    "ai": "6.0.0-beta.99",
+    "dotenv": "^17.2.3",
+    "eslint-plugin-format": "^1.0.2",
+    "evalite": "1.0.0-beta.13",
+    "vitest": "^4.0.10"
+  }
+}

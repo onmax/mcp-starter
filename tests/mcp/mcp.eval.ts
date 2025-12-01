@@ -15,57 +15,57 @@ evalite('Nuxt MCP Starter - Single Tool Calls', {
     // Pattern examples
     {
       input: 'Show me how to implement the list-search pattern in Nuxt MCP',
-      expected: [{ toolName: 'get_pattern', args: { pattern: 'list-search' } }],
+      expected: [{ toolName: 'get-pattern', args: { pattern: 'list-search' } }],
     },
     {
       input: 'I need an example of caching in MCP servers',
-      expected: [{ toolName: 'get_pattern', args: { pattern: 'caching' } }],
+      expected: [{ toolName: 'get-pattern', args: { pattern: 'caching' } }],
     },
     {
       input: 'Show me the code for implementing pagination',
-      expected: [{ toolName: 'get_pattern', args: { pattern: 'pagination', format: 'code' } }],
+      expected: [{ toolName: 'get-pattern', args: { pattern: 'pagination', format: 'code' } }],
     },
 
     // Project generation
     {
       input: 'I want to create a Nuxt MCP that queries a recipe API',
-      expected: [{ toolName: 'create_nuxt_project', args: { data_source: 'api', use_case: 'query recipe API', auth_required: false } }],
+      expected: [{ toolName: 'create-nuxt-project', args: { data_source: 'api', use_case: 'query recipe API', auth_required: false } }],
     },
     {
       input: 'Generate a Nuxt MCP project for searching a local PostgreSQL database with authentication',
-      expected: [{ toolName: 'create_nuxt_project', args: { data_source: 'database', use_case: 'search PostgreSQL', auth_required: true } }],
+      expected: [{ toolName: 'create-nuxt-project', args: { data_source: 'database', use_case: 'search PostgreSQL', auth_required: true } }],
     },
     {
       input: 'Create an MCP server that searches markdown documentation files',
-      expected: [{ toolName: 'create_nuxt_project', args: { data_source: 'file', use_case: 'search markdown docs' } }],
+      expected: [{ toolName: 'create-nuxt-project', args: { data_source: 'file', use_case: 'search markdown docs' } }],
     },
 
     // Debugging
     {
       input: 'My MCP tools aren\'t showing up in Claude Desktop, help me debug',
-      expected: [{ toolName: 'debug_setup', args: { issue: 'tools-not-showing' } }],
+      expected: [{ toolName: 'debug-setup', args: { issue: 'tools-not-showing' } }],
     },
     {
       input: 'I\'m getting CORS errors when trying to connect to my MCP server',
-      expected: [{ toolName: 'debug_setup', args: { issue: 'cors-error' } }],
+      expected: [{ toolName: 'debug-setup', args: { issue: 'cors-error' } }],
     },
     {
       input: 'My Zod schema validation keeps failing with errors',
-      expected: [{ toolName: 'debug_setup', args: { issue: 'schema-validation' } }],
+      expected: [{ toolName: 'debug-setup', args: { issue: 'schema-validation' } }],
     },
     {
       input: 'The MCP transport connection isn\'t working properly',
-      expected: [{ toolName: 'debug_setup', args: { issue: 'transport-setup' } }],
+      expected: [{ toolName: 'debug-setup', args: { issue: 'transport-setup' } }],
     },
 
     // Pattern requests phrased as questions
     {
       input: 'How do I validate input parameters with Zod in my MCP server?',
-      expected: [{ toolName: 'get_pattern', args: { pattern: 'validation' } }],
+      expected: [{ toolName: 'get-pattern', args: { pattern: 'validation' } }],
     },
     {
       input: 'Show me how to implement error handling with actionable messages',
-      expected: [{ toolName: 'get_pattern', args: { pattern: 'error-handling' } }],
+      expected: [{ toolName: 'get-pattern', args: { pattern: 'error-handling' } }],
     },
   ],
   task: async (input) => {
@@ -99,28 +99,28 @@ evalite('Nuxt MCP Starter - Multi-Step Workflows', {
     {
       input: 'I want to create an MCP for a recipe API. First show me how to scaffold it, then show me the caching pattern',
       expected: [
-        { toolName: 'create_nuxt_project', args: { data_source: 'api', use_case: 'recipe API' } },
-        { toolName: 'get_pattern', args: { pattern: 'caching' } },
+        { toolName: 'create-nuxt-project', args: { data_source: 'api', use_case: 'recipe API' } },
+        { toolName: 'get-pattern', args: { pattern: 'caching' } },
       ],
     },
     {
       input: 'Show me the validation pattern and then help me debug schema issues',
       expected: [
-        { toolName: 'get_pattern', args: { pattern: 'validation' } },
-        { toolName: 'debug_setup', args: { issue: 'schema-validation' } },
+        { toolName: 'get-pattern', args: { pattern: 'validation' } },
+        { toolName: 'debug-setup', args: { issue: 'schema-validation' } },
       ],
     },
     {
       input: 'Show me how to implement pagination in Nuxt MCP',
-      expected: [{ toolName: 'get_pattern', args: { pattern: 'pagination' } }],
+      expected: [{ toolName: 'get-pattern', args: { pattern: 'pagination' } }],
     },
     {
       input: 'I want to create an MCP for GitHub API with authentication',
-      expected: [{ toolName: 'create_nuxt_project', args: { data_source: 'api', use_case: 'GitHub API', auth_required: true } }],
+      expected: [{ toolName: 'create-nuxt-project', args: { data_source: 'api', use_case: 'GitHub API', auth_required: true } }],
     },
     {
       input: 'Generate an MCP server that wraps the Stripe API',
-      expected: [{ toolName: 'create_nuxt_project', args: { data_source: 'api', use_case: 'Stripe API' } }],
+      expected: [{ toolName: 'create-nuxt-project', args: { data_source: 'api', use_case: 'Stripe API' } }],
     },
   ],
   task: async (input) => {

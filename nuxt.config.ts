@@ -4,7 +4,12 @@ import { defineNuxtConfig } from 'nuxt/config'
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
-  modules: ['@nuxt/content', '@nuxt/eslint'],
+  modules: ['@nuxt/content', '@nuxt/eslint', '@nuxtjs/mcp-toolkit'],
+
+  mcp: {
+    name: 'mcp-starter-server',
+    browserRedirect: '/docs/guide/ai/mcp',
+  },
 
   eslint: {
     config: {

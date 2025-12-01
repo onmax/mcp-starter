@@ -26,9 +26,9 @@
     "mcp:studio": "npx @modelcontextprotocol/inspector --server-url http://localhost:3000/mcp"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.22.0",
     "@nuxt/content": "3.8.2",
     "@nuxt/eslint": "1.10.0",
+    "@nuxtjs/mcp-toolkit": "^0.4.1",
     "better-sqlite3": "^12.4.1",
     "eslint": "^9.39.1",
     "h3": "^1.15.4",

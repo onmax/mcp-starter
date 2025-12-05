@@ -28,11 +28,57 @@ jobs:
 
       - name: Run evaluations
         run: |
-          timeout --preserve-status 90 pnpm eval --threshold=85 | tee eval-output.txt || true
-          echo "# 📊 MCP Evaluation Results" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          cat eval-output.txt >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
+          timeout --preserve-status 90 pnpm eval --threshold=85 --outputPath=results.json | tee eval-output.txt
+          EXIT_CODE=${PIPESTATUS[0]}
+
+          # Generate markdown summary from JSON
+          if [ -f results.json ]; then
+            node -e '
+            const data = require("./results.json");
+            const run = data.run;
+            const suites = data.suites;
+
+            let md = "# 📊 Evaluation Results\n\n";
+            md += `**Run ID:** ${run.id} | **Type:** ${run.runType} | **Date:** ${new Date(run.createdAt).toLocaleString()}\n\n`;
+
+            // Summary table
+            md += "## Summary\n\n";
+            md += "| Suite | Score | Status | Duration |\n";
+            md += "|-------|-------|--------|----------|\n";
+
+            for (const suite of suites) {
+              const score = (suite.averageScore * 100).toFixed(1);
+              const icon = suite.status === "success" ? "✅" : "❌";
+              const duration = (suite.duration / 1000).toFixed(2);
+              md += `| ${suite.name} | ${score}% | ${icon} ${suite.status} | ${duration}s |\n`;
+            }
+
+            // Details per suite
+            md += "\n## Details\n\n";
+            for (const suite of suites) {
+              md += `### ${suite.name}\n\n`;
+              md += "| # | Score | Scorers | Duration |\n";
+              md += "|---|-------|---------|----------|\n";
+
+              for (const ev of suite.evals) {
+                const score = (ev.averageScore * 100).toFixed(0);
+                const scorers = ev.scores.map(s => `${s.name}: ${(s.score * 100).toFixed(0)}%`).join(", ");
+                const dur = (ev.duration / 1000).toFixed(2);
+                md += `| ${ev.colOrder + 1} | ${score}% | ${scorers} | ${dur}s |\n`;
+              }
+              md += "\n";
+            }
+
+            console.log(md);
+            ' >> $GITHUB_STEP_SUMMARY
+          else
+            echo "# ❌ Evaluation Failed" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cat eval-output.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+
+          exit $EXIT_CODE
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           MCP_URL: ${{ secrets.MCP_URL }}
